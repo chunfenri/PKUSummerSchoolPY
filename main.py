@@ -1,16 +1,27 @@
+import pgzrun
 import pgzero
 import math
 import random
 
+WIDTH = 600
+HEIGHT = 1200
+
+
 BubbleColor = ['red', 'yellow', 'green', 'blue']
 
 epoch = 0
+
+def draw():
+    screen.clear()
+    screen.fill((128,0,0))
+
 
 
 class bubble():
     color = random.choice(BubbleColor)
     posx = 0
     posy = 0
+
 
 
 def init():
@@ -29,8 +40,6 @@ def judgeBubbleBoom(bubble):
 def bubbleExplode(bubbleList):
     pass
 
-def main():
-    pass
 
-if __name__ == "__main__":
-    main()
+sounds.background1.play()
+pgzrun.go()
