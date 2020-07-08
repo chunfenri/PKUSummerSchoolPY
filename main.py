@@ -9,7 +9,7 @@ newBubbleIdx = 1
 
 bubbleColor = ['red', 'yellow', 'green', 'blue']
 
-bubblePos = [[] for i in range(20)]
+bubblePos = [[0 for _ in range(10)] for _ in range(20)]
 
 activeBubble = {}
 
@@ -40,8 +40,7 @@ class bubble():
         self.index = newBubbleIdx
         newBubbleIdx += 1
         activeBubble[self.index] = self
-
-    
+        bubblePos[y][x] = self.index
 
 
 def init():
