@@ -58,8 +58,8 @@ def pos2index(posx, posy):
 
 
 def judgeConnect(bubbleA, bubbleB):
-    indxA, indyA = bubbleA.index
-    indxB, indyB = bubbleB.index
+    indxA, indyA = bubbleA.indx, bubbleA.indy
+    indxB, indyB = bubbleB.indx, bubbleB.indy
     if indxA == indxB:
         if abs(indyA - indyB) == 1:
             return 1
