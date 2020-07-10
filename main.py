@@ -36,8 +36,8 @@ def on_mouse_down(pos):
 class bubble():
     def __init__(self, x, y):
         self.color = random.choice(bubbleColor)
-        self.posx = x
-        self.posy = y
+        self.indx = x
+        self.indy = y
         self.index = newBubbleIdx
         newBubbleIdx += 1
         activeBubble[self.index] = self
