@@ -60,6 +60,16 @@ def pos2index(posx, posy):
 def judgeConnect(bubbleA, bubbleB):
     indxA, indyA = bubbleA.index
     indxB, indyB = bubbleB.index
+    if indxA == indxB:
+        if abs(indyA - indyB) == 1:
+            return 1
+    elif abs(indxA - indxB) == 1:
+        if indxA % 2 == 0:
+            if indyA == indyB or indyA - 1 == indyB:
+                return 1
+        else:
+            if indyA == indyB or indyA + 1 == indyB:
+                return 1
 
 
 def findExplode(bubbleA):
