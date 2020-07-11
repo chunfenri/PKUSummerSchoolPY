@@ -14,7 +14,7 @@ bubblePos = [["" for _ in range(20)] for _ in range(10)]
 
 activeBubble = {}
 
-explodeBub = []
+explodeList = []
 
 movingLine = False
 bubbleFlying = False
@@ -22,10 +22,13 @@ bubbleFlyX = 0.0
 bubbleFlyY = 0.0
 bubbleNowX = 0.0
 bubbleNowY = 0.0
+totalCount = 0
 
 epoch = 0
 bubHitNum = 0
 mark = 0
+musicCount = 0
+bubbleExping = False
 
 
 class bubble():
@@ -157,13 +160,52 @@ def findFallBubble():
     return fallList
 
 
-def explodeBubbles(explodeList):
+def explodeBubbles():
     global mark
-    mark += len(explodeList)**2
+    mark += len(explodeList) ** 2
+    print(explodeList)
+
+    for pos in explodeList:
+        name = activeBubble[pos].color
+        name += 'exp1'
+        activeBubble[pos].pic.image = name
+    bubbleExpStep = 1
+    clock.schedule(explodeBub1, 0.1)
+
+
+def explodeBub1():
+    print(explodeList)
+    for pos in explodeList:
+        name = activeBubble[pos].color
+        name += 'exp2'
+        activeBubble[pos].pic.image = name
+    clock.schedule(explodeBub2, 0.1)
+
+
+def explodeBub2():
+    print(explodeList)
+    for pos in explodeList:
+        name = activeBubble[pos].color
+        name += 'exp3'
+        activeBubble[pos].pic.image = name
+    clock.schedule(explodeBub3, 0.1)
+
+
+def explodeBub3():
+    global explodeList
+    print(explodeList)
     for pos in explodeList:
         del activeBubble[pos]
-
-    mark += len(explodeBub)**2
+    explodeList.clear()
+    explodeList = findFallBubble()
+    if explodeList:
+        explodeBubbles()
+    else:
+        global bubbleFlying
+        print('12323123123')
+        bubbleFlying = False
+        bubbleExping = False
+        
 
 
 def game_end():
@@ -201,21 +243,21 @@ def generateLine():
     for i in range(lineNum):
         activeBubble[(i, 0)] = bubble(i, 0)
 
-    if epoch == 5:
-        bubbleColor.append('purple')
-
-    if epoch == 15:
+    if epoch == 10:
         bubbleColor.append('orange')
 
-    if epoch == 35:
+    if epoch == 25:
         bubbleColor.append('lblue')
+
+    if epoch == 45:
+        bubbleColor.append('purple')
 
     return False
 
 
 def draw():
     screen.clear()
-    screen.fill((128, 255, 128))
+    screen.fill((0, 100, 0))
 
     newBub.draw()
     for bubble in activeBubble.values():
@@ -224,7 +266,11 @@ def draw():
 
 def update():
     rad = 30
-    global bubbleFlying
+    global bubbleFlying, bubbleExping,totalCount
+    if bubbleExping:
+        return
+    totalCount+=1
+    print(totalCount)
     if bubbleFlying:
         global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY, newBub, newBubColor
         bubbleNowX -= bubbleFlyX
@@ -238,7 +284,7 @@ def update():
             neiborList = []
             for i in range(-1, 2):
                 for j in (-1, 0):
-                    if judgeConnect(idxX+i,idxY+j,idxX,idxY):
+                    if judgeConnect(idxX+i, idxY+j, idxX, idxY):
                         if (idxX + i, idxY + j) in activeBubble:
                             neiborList.append((idxX + i, idxY + j))
 
@@ -254,30 +300,33 @@ def update():
 
                 if math.sqrt(minDis) <= 2 * rad:
                     print(neiborList)
-                    print(bubbleNowX,bubbleNowY)
-                    print(idxX,idxY)
+                    print(bubbleNowX, bubbleNowY)
+                    print(idxX, idxY)
                     a = bubble(idxX, idxY, newBubColor)
                     newBubColor = random.choice(bubbleColor)
                     del newBub
                     newBub = Actor(newBubColor)
                     newBub.center = (300, 950)
 
+                    global explodeList
                     explodeList = findExplode(a)
-                    if explodeList:
-                        explodeBubbles(explodeList)
-                        explodeBubbles(findFallBubble())
-                    bubbleFlying = False
+                    if len(explodeList) >= 3:
+                        bubbleExping = True
+                        explodeBubbles()
+                        return
+                    else:
+                        explodeList.clear()
                     global bubHitNum
                     bubHitNum += 1
-
                     if bubHitNum % 4 == 0:
                         generateLine()
+    print(totalCount)
 
 
 def on_mouse_down(pos):
     posx, posy = pos
     global bubbleFlying
-    if posy < 920 and bubbleFlying == False:
+    if posy < 920 and bubbleFlying == False and bubbleExping == False:
         posx -= 300
         posy = 950 - posy
         global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY
@@ -288,7 +337,21 @@ def on_mouse_down(pos):
         bubbleFlying = True
 
 
-sounds.background3.play()
+def on_music_end():
+    global musicCount
+    musicCount += 1
+    if musicCount % 3 == 1:
+        music.play_once('background2')
+
+    elif musicCount % 3 == 2:
+        music.play_once('background3')
+
+    else:
+        music.play_once('background1')
+
+
+music.play_once('background1')
+
 for j in range(3):
     for i in range(9):
         a = bubble(i, j)
