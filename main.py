@@ -36,6 +36,7 @@ bubbleExping = False
 
 bubbleCnt = 0
 
+
 class bubble():
     def __init__(self, x, y, color=''):
         global bubbleCnt
@@ -285,8 +286,10 @@ def draw():
     #screen.fill((0, 100, 0))
     screen.blit('3', (0, 0))
     screen.draw.text('mark:', (400, 940), color='#FFAAAA', fontsize=40)
-    screen.draw.text(str(mark), (490, 935), color='#FFAAFF',
-                     gcolor='#FFFFAA', fontsize=60)
+    screen.draw.text(str(mark), (490, 935),
+                     color='#FFAAFF',
+                     gcolor='#FFFFAA',
+                     fontsize=60)
 
     screen.draw.filled_circle((150, 950), 20, switchColor(nextBubColor))
     newBub.draw()
@@ -300,7 +303,7 @@ def switchColor(name):
     if name == 'yellow':
         return (255, 255, 0)
     if name == 'dblue':
-        return(0, 0, 255)
+        return (0, 0, 255)
     if name == 'green':
         return (60, 255, 60)
     if name == 'orange':
@@ -318,12 +321,17 @@ def update():
     updating = 1
 
     if bubbleFlying:
-        global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY, newBub, newBubColor, nextBubColor, bubbleLock
+        global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY, newBub, newBubColor, nextBubColor, bubbleLock, bubHitNum
         bubbleNowX -= bubbleFlyX
         bubbleNowY -= bubbleFlyY
-        if bubbleNowX < 30 or bubbleNowX > 570:
-            bubbleFlyX = -bubbleFlyX
 
+        if bubbleNowX < 30:
+            bubbleFlyX = -bubbleFlyX
+            bubbleNowX = 60 - bubbleNowX
+        if bubbleNowX > 570:
+            bubbleFlyX = -bubbleFlyX
+            bubbleNowX = 1140 - bubbleNowX
+        
         newBub.center = (bubbleNowX, bubbleNowY)
         if bubbleNowY < 950:
             idxX, idxY = pos2index(bubbleNowX, bubbleNowY)
@@ -333,6 +341,24 @@ def update():
                     if judgeConnect(idxX + i, idxY + j, idxX, idxY):
                         if (idxX + i, idxY + j) in activeBubble:
                             neiborList.append((idxX + i, idxY + j))
+
+            if idxY == 0 and len(neiborList) == 0:
+                a = bubble(idxX, idxY, newBubColor)
+                newBubColor = nextBubColor
+                nextBubColor = random.choice(bubbleColor)
+                del newBub
+                newBub = Actor(newBubColor)
+                newBub.center = (300, 950)
+                bubbleNowX = 300
+                bubbleNowY = 950
+                bubbleFlying = False
+
+                bubHitNum += 1
+                if bubHitNum % 4 == 0:
+                    generateLine()
+                bubbleLock = 0
+                updating = 0
+                return
 
             if neiborList:
 
@@ -370,7 +396,7 @@ def update():
                         bubbleLock = 0
                     else:
                         explodeList.clear()
-                    global bubHitNum
+
                     bubHitNum += 1
                     if bubHitNum % 4 == 0:
                         generateLine()
