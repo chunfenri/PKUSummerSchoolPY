@@ -15,6 +15,8 @@ bubblePos = [["" for _ in range(10)] for _ in range(20)]
 
 activeBubble = {}
 
+explodeBub = []
+
 movingLine = False
 bubbleFlying = False
 bubbleFlyX = 0.0
@@ -166,7 +168,11 @@ def findFallBubble():
 
 
 def explodeBubbles(explodeList):
-    pass
+    for pos in explodeList:
+        explodeBub.append(activeBubble[pos].pic)
+        del activeBubble[pos]
+        bubblePos[pos[0]][pos[1]] = ''
+
 
 def generateLine():
     for i in bubblePos[19]:
@@ -247,8 +253,14 @@ def update():
         if bubbleNowX < 30 or bubbleNowX > 150:
             bubbleFlyX = -bubbleFlyX
 
-        newBub.left += bubbleNowX - newBub.left
-        newBub.up += bubbleNowY - newBub.up
+
+        nbposx, nbposy = newBub.pos
+        nbposx += bubbleNowX - nbposx
+        nbposy += bubbleNowY - nbposy
+        
+        newBub.center = (nbposx, nbposy)
+        print(bubbleNowX,bubbleNowY)
+        print(pos2index(bubbleNowX, bubbleNowY))
         idxX, idxY = pos2index(bubbleNowX, bubbleNowY)
         neiborList = []
         for i in range(-1, 2):
@@ -278,9 +290,6 @@ def update():
             if bubHitNum % 4 == 0:
                 if generateLine():
                     game_end()
-                
-
-            
 
 
 def on_mouse_down(pos):
