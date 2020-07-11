@@ -174,7 +174,7 @@ def explodeBubbles():
 
 
 def explodeBub1():
-    print(explodeList)
+    #print(explodeList)
     for pos in explodeList:
         name = activeBubble[pos].color
         name += 'exp2'
@@ -183,7 +183,7 @@ def explodeBub1():
 
 
 def explodeBub2():
-    print(explodeList)
+    #print(explodeList)
     for pos in explodeList:
         name = activeBubble[pos].color
         name += 'exp3'
@@ -193,7 +193,7 @@ def explodeBub2():
 
 def explodeBub3():
     global explodeList
-    print(explodeList)
+    #print(explodeList)
     for pos in explodeList:
         del activeBubble[pos]
     explodeList.clear()
@@ -201,7 +201,7 @@ def explodeBub3():
     if explodeList:
         explodeBubbles()
     else:
-        global bubbleFlying
+        global bubbleFlying,bubbleExping
         print('12323123123')
         bubbleFlying = False
         bubbleExping = False
@@ -263,16 +263,20 @@ def draw():
     for bubble in activeBubble.values():
         bubble.pic.draw()
 
-
+updating=0
+bubbleLock=0
 def update():
     rad = 30
-    global bubbleFlying, bubbleExping,totalCount
+    global bubbleFlying, bubbleExping,totalCount,updating
     if bubbleExping:
         return
+    if updating:
+        return
+    updating=1
     totalCount+=1
-    print(totalCount)
+    #print(totalCount)
     if bubbleFlying:
-        global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY, newBub, newBubColor
+        global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY, newBub, newBubColor,bubbleLock
         bubbleNowX -= bubbleFlyX
         bubbleNowY -= bubbleFlyY
         if bubbleNowX < 30 or bubbleNowX > 570:
@@ -298,7 +302,8 @@ def update():
                     if Dis < minDis:
                         minDis = Dis
 
-                if math.sqrt(minDis) <= 2 * rad:
+                if not bubbleLock and math.sqrt(minDis) <= 2 * rad:
+                    bubbleLock=1
                     print(neiborList)
                     print(bubbleNowX, bubbleNowY)
                     print(idxX, idxY)
@@ -307,12 +312,17 @@ def update():
                     del newBub
                     newBub = Actor(newBubColor)
                     newBub.center = (300, 950)
-
+                    bubbleNowX=300
+                    bubbleNowY=950
+                    bubbleFlying=0
+                    
                     global explodeList
                     explodeList = findExplode(a)
                     if len(explodeList) >= 3:
                         bubbleExping = True
                         explodeBubbles()
+                        updating=0
+                        bubbleLock=0
                         return
                     else:
                         explodeList.clear()
@@ -320,7 +330,9 @@ def update():
                     bubHitNum += 1
                     if bubHitNum % 4 == 0:
                         generateLine()
-    print(totalCount)
+                    bubbleLock=0
+    updating=0
+    #print(totalCount)
 
 
 def on_mouse_down(pos):
@@ -330,8 +342,8 @@ def on_mouse_down(pos):
         posx -= 300
         posy = 950 - posy
         global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY
-        bubbleFlyX = -math.sin(math.atan(posx / posy)) * 20
-        bubbleFlyY = math.cos(math.atan(posx / posy)) * 20
+        bubbleFlyX = -math.sin(math.atan(posx / posy)) * 10
+        bubbleFlyY = math.cos(math.atan(posx / posy)) * 10
         bubbleNowX = 300.0
         bubbleNowY = 950.0
         bubbleFlying = True
