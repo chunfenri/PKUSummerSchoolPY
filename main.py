@@ -6,12 +6,11 @@ import time
 import numpy as np
 
 WIDTH = 600
-HEIGHT = 1300
-
+HEIGHT = 1000
 
 bubbleColor = ['red', 'yellow', 'green', 'dblue']
 
-bubblePos = [["" for _ in range(10)] for _ in range(20)]
+bubblePos = [["" for _ in range(20)] for _ in range(10)]
 
 activeBubble = {}
 
@@ -38,11 +37,11 @@ class bubble():
         self.indx = x
         self.indy = y
         self.pic = Actor(self.color)
-        pixy, pixx = index2pos(y, x)
-        self.pic.pos = (-60, pixx)
+        posx, posy = index2pos(x, y)
+        self.pic.center = (posx, posy)
 
-        activeBubble[(y, x)] = self
-        bubblePos[y][x] = self.color
+        activeBubble[(x, y)] = self
+        bubblePos[x][y] = self.color
 
 
 def index2pos(indx, indy):
@@ -60,11 +59,7 @@ def pos2index(posx, posy):
     '''主要用于bubble碰撞到别的bubble时看应该要塞到哪个位置，位置可能不是准确位置，在一个范围内都要映射到一个位置'''
     rad = 30.0
     dy = rad * math.sqrt(3)
-    indy_esm = [
-        int(posy / dy) - 1,
-        int(posy / dy),
-        int(posy / dy) + 1
-    ]
+    indy_esm = [int(posy / dy) - 1, int(posy / dy), int(posy / dy) + 1]
     indx_esm = [
         int(posx / (2 * rad)) - 1,
         int(posx / (2 * rad)),
@@ -82,109 +77,119 @@ def pos2index(posx, posy):
 
 
 def judgeConnect(A_indx, A_indy, B_indx, B_indy):
-    if A_indy == B_indy:
-        if abs(A_indx - B_indx) == 1:
-            return 1
-    elif abs(A_indy - B_indy) == 1:
-        if A_indy % 2 == 0:
-            if A_indx == B_indx or A_indx - 1 == B_indx:
+    if A_indx in range(10) and A_indy in range(15):
+        if A_indy == B_indy:
+            if abs(A_indx - B_indx) == 1:
                 return 1
-        else:
-            if A_indx == B_indx or A_indx + 1 == B_indx:
-                return 1
+        elif abs(A_indy - B_indy) == 1:
+            if A_indy % 2 == 0:
+                if A_indx == B_indx or A_indx - 1 == B_indx:
+                    return 1
+            else:
+                if A_indx == B_indx or A_indx + 1 == B_indx:
+                    return 1
+    return 0
 
 
-def explodeSearch(vis, bubbleA):
+def explodeSearch(bubbleA):
     res = [(bubbleA.indx, bubbleA.indy)]
+    global vis
     vis[bubbleA.indx][bubbleA.indy] = 1
     for dx in range(-1, 2):
         for dy in range(-1, 2):
             x = dx + bubbleA.indx
             y = dy + bubbleA.indy
-            if vis[x][y] == 0 and judgeConnect(x, y, bubbleA.indx,
-                                               bubbleA.indy):
-                if (x, y) in activeBubble:
-                    bubbleB = activeBubble[(x, y)]
-                    if bubbleB.color == bubbleA.color:
-                        res += explodeSearch(vis, bubbleB)
-    if len(res) >= 3:
-        return res
-    else:
-        return []
+            if judgeConnect(x, y, bubbleA.indx, bubbleA.indy):
+                if vis[x][y] == 0:
+                    vis[x][y] = 1
+                    if (x, y) in activeBubble:
+                        bubbleB = activeBubble[(x, y)]
+                        if bubbleB.color == bubbleA.color:
+                            res += explodeSearch(bubbleB)
+    return res
 
 
 def findExplode(bubbleA):
     '''bubbleA是撞击上的球所在位置的index值，是一个二元元组
     找到哪些球球需要爆炸，返回爆照球的下标列表。不包含爆炸后掉落的球，只考虑相同颜色的连通分量'''
     '''先传入新的球bubbleA,函数返回所有需要爆炸球的下标二元组列表.若不需爆炸则返回空表'''
-    vis = [[0 for _ in range(10)] for _ in range(20)]
-    return explodeSearch(vis, bubbleA)
+    global vis
+    vis = [[0 for _ in range(20)] for _ in range(10)]
+    res = explodeSearch(bubbleA)
+    if len(res) < 3:
+        return []
+    else:
+        return res
 
 
-def connectSearch(vis, bubbleA):
+def connectSearch(bubbleA):
     res = [(bubbleA.indx, bubbleA.indy)]
+    global vis
     vis[bubbleA.indx][bubbleA.indy] = 1
-    mark = 0
+    mk = 0
     if bubbleA.indy == 0:
-        mark = 1
+        mk = 1
     for dx in range(-1, 2):
         for dy in range(-1, 2):
             x = dx + bubbleA.indx
             y = dy + bubbleA.indy
-            if vis[x][y] == 0 and judgeConnect(x, y, bubbleA.indx,
-                                               bubbleA.indy):
-                if (x, y) in activeBubble:
-                    bubbleB = activeBubble[(x, y)]
-                    resB, markB = explodeSearch(vis, bubbleB)
-                    res += resB
-                    mark = mark or markB
-    return [res, mark]
+            if judgeConnect(x, y, bubbleA.indx, bubbleA.indy):
+                if vis[x][y] == 0:
+                    vis[x][y] = 1
+                    if (x, y) in activeBubble:
+                        bubbleB = activeBubble[(x, y)]
+                        resB, mkB = connectSearch(bubbleB)
+                        res += resB
+                        mk = mk or mkB
+    return [res, mk]
 
 
 def findFallBubble():
     '''找到球爆炸后需要掉下来的其他球，返回值同上'''
     fallList = []
-    vis = [[0 for _ in range(10)] for _ in range(20)]
+    global vis
+    vis = [[0 for _ in range(20)] for _ in range(10)]
     for bubble in activeBubble.values():
         if vis[bubble.indx][bubble.indy] == 0:
-            res, mark = connectSearch(vis, bubble)
-            if mark == 0:
+            res, mk = connectSearch(bubble)
+            if mk == 0:
                 fallList += res
     return fallList
 
 
 def explodeBubbles(explodeList):
+    global mark
+    mark += len(explodeList)**2
     for pos in explodeList:
-        explodeBub.append(activeBubble[pos].pic)
         del activeBubble[pos]
-        bubblePos[pos[0]][pos[1]] = ''
 
-    mark += len(explodeBub) ** 2
+    mark += len(explodeBub)**2
+
+
+def game_end():
+    for x in range(10):
+        for y in range(17):
+            if (x, y) in activeBubble:
+                return 1
+    return 0
 
 
 def generateLine():
-    for i in bubblePos[19]:
-        if i:
-            return True
 
-    for i in range(19):
-        for j in range(10):
-            bubblePos[i + 1][j] = bubblePos[i][j]
-
-    key, value = [], []
-
-    for keys in activeBubble:
-        newKey = list(key)
-        newKey[0] += 1
+    global activeBubble
+    dic = {}
+    for orgKey in activeBubble.keys():
+        newKey = list(orgKey)
+        newKey[1] += 1
         newKey = tuple(newKey)
-        key.append(newKey)
+        newValue = activeBubble[orgKey]
+        dic[newKey] = newValue
 
-        newValue = activeBubble[keys]
-        newValue.indy += 1
-        value.append(newValue)
-
-    activeBubble.clear()
-    activeBubble.fromkeys(key, value)
+    activeBubble = dic
+    for val in dic.values():
+        val.indy += 1
+        posx, posy = index2pos(val.indx, val.indy)
+        val.pic.center = (posx, posy)
 
     global epoch
     if epoch % 2:
@@ -194,10 +199,7 @@ def generateLine():
     epoch += 1
 
     for i in range(lineNum):
-        bubble(i, 0)
-
-    global movingLine
-    movingLine = True
+        activeBubble[(i, 0)] = bubble(i, 0)
 
     if epoch == 5:
         bubbleColor.append('purple')
@@ -221,72 +223,68 @@ def draw():
 
 
 def update():
-    global movingLine, bubbleFlying
-    if movingLine:
-        for bubbles in activeBubble.values():
-            bubbles.pic.down += 5
-        if activeBubble.values[0].posy == activeBubble.values[0].down:
-            movingLine = False
-
+    rad = 30
+    global bubbleFlying
     if bubbleFlying:
-        global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY
+        global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY, newBub, newBubColor
         bubbleNowX -= bubbleFlyX
         bubbleNowY -= bubbleFlyY
-        if bubbleNowX < 30 or bubbleNowX > 550:
+        if bubbleNowX < 30 or bubbleNowX > 570:
             bubbleFlyX = -bubbleFlyX
 
-        nbposx, nbposy = newBub.pos
-        nbposx += bubbleNowX - nbposx
-        nbposy += bubbleNowY - nbposy
-
-        newBub.center = (nbposx, nbposy)
-        print(bubbleNowX, bubbleNowY)
-        print(pos2index(bubbleNowX, bubbleNowY))
-        if bubbleNowY < 1200:
+        newBub.center = (bubbleNowX, bubbleNowY)
+        if bubbleNowY < 950:
             idxX, idxY = pos2index(bubbleNowX, bubbleNowY)
             neiborList = []
             for i in range(-1, 2):
                 for j in (-1, 0):
-                    if idxY + j > 19:
-                        continue
-                    if bubblePos[idxY+j][idxX+i]:
-                        neiborList.append((idxY+j, idxX+i))
+                    if judgeConnect(idxX+i,idxY+j,idxX,idxY):
+                        if (idxX + i, idxY + j) in activeBubble:
+                            neiborList.append((idxX + i, idxY + j))
 
             if neiborList:
                 minOne = neiborList[0]
-                x0, y0 = index2pos(minOne[0],minOne[1])
-                minDis = (bubbleNowX - x0) ** 2 + (bubbleNowY - y0) ** 2
+                x0, y0 = index2pos(minOne[0], minOne[1])
+                minDis = (bubbleNowX - x0)**2 + (bubbleNowY - y0)**2
                 for neighbor in neiborList[1:]:
-                    x0, y0 = index2pos(neighbor[0],neighbor[1])
-                    Dis = (bubbleNowX - x0) ** 2 + (bubbleNowY - y0) ** 2
+                    x0, y0 = index2pos(neighbor[0], neighbor[1])
+                    Dis = (bubbleNowX - x0)**2 + (bubbleNowY - y0)**2
                     if Dis < minDis:
-                        minOne = neighbor
                         minDis = Dis
 
-                a = bubble(minOne[0], minOne[1], newBubColor)
-                explodeList = findExplode(a)
-                if explodeList:
-                    explodeBubbles(explodeList)
+                if math.sqrt(minDis) <= 2 * rad:
+                    print(neiborList)
+                    print(bubbleNowX,bubbleNowY)
+                    print(idxX,idxY)
+                    a = bubble(idxX, idxY, newBubColor)
+                    newBubColor = random.choice(bubbleColor)
+                    del newBub
+                    newBub = Actor(newBubColor)
+                    newBub.center = (300, 950)
 
-                bubbleFlying = False
-                bubHitNum += 1
+                    explodeList = findExplode(a)
+                    if explodeList:
+                        explodeBubbles(explodeList)
+                        explodeBubbles(findFallBubble())
+                    bubbleFlying = False
+                    global bubHitNum
+                    bubHitNum += 1
 
-                if bubHitNum % 4 == 0:
-                    if generateLine():
-                        game_end()
+                    if bubHitNum % 4 == 0:
+                        generateLine()
 
 
 def on_mouse_down(pos):
     posx, posy = pos
     global bubbleFlying
-    if posy < 1240 and bubbleFlying == False:
+    if posy < 920 and bubbleFlying == False:
         posx -= 300
-        posy = 1250 - posy
-        global bubbleFlyX, bubbleFlyY
-        bubbleFlyX = math.cos(math.atan(posy/posx)) * 10
-        bubbleFlyY = -math.sin(math.atan(posy/posx)) * 10
+        posy = 950 - posy
+        global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY
+        bubbleFlyX = -math.sin(math.atan(posx / posy)) * 20
+        bubbleFlyY = math.cos(math.atan(posx / posy)) * 20
         bubbleNowX = 300.0
-        bubbleNowY = 1250.0
+        bubbleNowY = 950.0
         bubbleFlying = True
 
 
@@ -295,7 +293,6 @@ for j in range(3):
     for i in range(9):
         a = bubble(i, j)
         a.pic.center = index2pos(i, j)
-        print(index2pos(i, j))
     if j % 2 == 0:
         a = bubble(9, j)
         a.pic.center = index2pos(9, j)
@@ -308,7 +305,7 @@ for i in range(9):
 startTime = time.time()
 newBubColor = random.choice(bubbleColor)
 newBub = Actor(newBubColor)
-newBub.pos = (300, 1250)
+newBub.pos = (300, 950)
 bubbleNowX = 300
-bubbleNowY = 1250
+bubbleNowY = 950
 pgzrun.go()
