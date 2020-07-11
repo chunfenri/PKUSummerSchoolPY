@@ -10,7 +10,6 @@ HEIGHT = 1000
 
 bubbleColor = ['red', 'yellow', 'green', 'dblue']
 
-bubblePos = [["" for _ in range(20)] for _ in range(10)]
 
 activeBubble = {}
 activeBubbleCnt = {}
@@ -33,6 +32,8 @@ mark = 0
 newmark = 0
 musicCount = 0
 bubbleExping = False
+gameEnd = False
+gameEndFinish = False
 
 bubbleCnt = 0
 
@@ -53,7 +54,6 @@ class bubble():
         activeBubbleCnt[bubbleCnt] = self
         bubbleCnt += 1
         activeBubble[(x, y)] = self
-        bubblePos[x][y] = self.color
 
 
 def index2pos(indx, indy):
@@ -185,7 +185,9 @@ def findFallBubble():
 
 def explodeBubbles():
     global newmark, explodeListCnt, explodeList
-    newmark = len(explodeList)**2
+    newmark = len(explodeList) ** 2
+    if newmark >= 100:
+        sounds.bonus1.play()
     sounds.eliminate2.play()
     for ct in explodeListCnt:
         name = activeBubbleCnt[ct].color
@@ -236,16 +238,61 @@ def explodeBub3():
 
 
 def game_end():
-    for x in range(10):
-        for y in range(15):
-            if (x, y) in activeBubble:
-                return 1
-    return 0
+    global bubbleFlying, gameEnd
+    bubbleFlying = False
+    gameEnd = True
+    music.pause()
+    sounds.explode.play()
+    for item in activeBubble.values():
+        name = item.color
+        name += 'exp1'
+        item.pic.image = name
+
+    name = newBubColor
+    name += 'exp1'
+    newBub.image = name
+    clock.schedule(game_end1, 0.2)
+
+
+def game_end1():
+    for item in activeBubble.values():
+        name = item.color
+        name += 'exp2'
+        item.pic.image = name
+
+    name = newBubColor
+    name += 'exp2'
+    newBub.image = name
+    clock.schedule(game_end2, 0.3)
+
+
+def game_end2():
+    for item in activeBubble.values():
+        name = item.color
+        name += 'exp3'
+        item.pic.image = name
+
+    name = newBubColor
+    name += 'exp3'
+    newBub.image = name
+    clock.schedule(game_end3, 0.4)
+
+
+def game_end3():
+    global gameEndFinish
+    gameEndFinish = True
+    global activeBubble
+    del activeBubble
+    sounds.gg.play()
 
 
 def generateLine():
 
     global activeBubble, epoch
+    for i in range(10):
+        if (i, 14) in activeBubble:
+            return True
+
     if epoch % 2:
         lineNum = 10
     else:
@@ -287,14 +334,16 @@ def draw():
     screen.blit('3', (0, 0))
     screen.draw.text('mark:', (400, 940), color='#FFAAAA', fontsize=40)
     screen.draw.text(str(mark), (490, 935),
-                     color='#FFAAFF',
-                     gcolor='#FFFFAA',
-                     fontsize=60)
+                     color='#FFAAFF', gcolor='#FFFFAA', fontsize=60)
 
     screen.draw.filled_circle((150, 950), 20, switchColor(nextBubColor))
-    newBub.draw()
-    for bubble in activeBubble.values():
-        bubble.pic.draw()
+    
+    if gameEndFinish == 0:
+        newBub.draw()
+        for bubble in activeBubble.values():
+            bubble.pic.draw()
+    else:
+        screen.draw.text('GAME OVER', (95, 450), color='#FF6600', fontsize=100)
 
 
 def switchColor(name):
@@ -315,8 +364,8 @@ def switchColor(name):
 
 def update():
     rad = 30
-    global bubbleFlying, bubbleExping, updating
-    if bubbleExping or updating:
+    global bubbleFlying, bubbleExping, updating, gameEnd
+    if bubbleExping or updating or gameEnd:
         return
     updating = 1
 
@@ -331,7 +380,7 @@ def update():
         if bubbleNowX > 570:
             bubbleFlyX = -bubbleFlyX
             bubbleNowX = 1140 - bubbleNowX
-        
+
         newBub.center = (bubbleNowX, bubbleNowY)
         if bubbleNowY < 950:
             idxX, idxY = pos2index(bubbleNowX, bubbleNowY)
@@ -361,7 +410,9 @@ def update():
                 return
 
             if neiborList:
-
+                if bubbleNowY > 910:
+                    game_end()
+                    return
                 minOne = neiborList[0]
                 x0, y0 = index2pos(minOne[0], minOne[1])
                 minDis = (bubbleNowX - x0)**2 + (bubbleNowY - y0)**2
@@ -398,16 +449,19 @@ def update():
                         explodeList.clear()
 
                     bubHitNum += 1
-                    if bubHitNum % 4 == 0:
-                        generateLine()
+                    if bubHitNum % 5 == 0:
+                        if generateLine():
+                            game_end()
+
                     bubbleLock = 0
     updating = 0
 
 
 def on_mouse_down(pos):
     posx, posy = pos
-    global bubbleFlying
-    if posy < 920 and bubbleFlying == False and bubbleExping == False:
+    global bubbleFlying, bubbleExping, gameEnd
+    if posy < 920 and bubbleFlying == False and bubbleExping == False and gameEnd == False:
+        sounds.eliminate1.play()
         posx -= 300
         posy = 950 - posy
         global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY
