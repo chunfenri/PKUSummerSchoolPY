@@ -186,7 +186,7 @@ def findFallBubble():
 def explodeBubbles():
     global newmark, explodeListCnt, explodeList
     newmark = len(explodeList) ** 2
-    if newmark >= 100:
+    if newmark >= 64:
         sounds.bonus1.play()
     sounds.eliminate2.play()
     for ct in explodeListCnt:
@@ -331,9 +331,9 @@ def generateLine():
 def draw():
     screen.clear()
     #screen.fill((0, 100, 0))
-    screen.blit('3', (0, 0))
-    screen.draw.text('mark:', (400, 940), color='#FFAAAA', fontsize=40)
-    screen.draw.text(str(mark), (490, 935),
+    screen.blit('2', (0, 0))
+    screen.draw.text('score:', (380, 940), color='#FFAAAA', fontsize=40)
+    screen.draw.text(str(mark), (480, 935),
                      color='#FFAAFF', gcolor='#FFFFAA', fontsize=60)
 
     screen.draw.filled_circle((150, 950), 20, switchColor(nextBubColor))
