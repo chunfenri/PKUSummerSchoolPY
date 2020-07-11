@@ -391,7 +391,7 @@ def update():
                         if (idxX + i, idxY + j) in activeBubble:
                             neiborList.append((idxX + i, idxY + j))
 
-            if idxY == 0 and len(neiborList) == 0:
+            if idxY == 0 and len(neiborList) < 2:
                 a = bubble(idxX, idxY, newBubColor)
                 newBubColor = nextBubColor
                 nextBubColor = random.choice(bubbleColor)
@@ -486,7 +486,7 @@ def on_music_end():
 
 
 music.play_once('background1')
-
+'''
 for j in range(3):
     for i in range(9):
         a = bubble(i, j)
@@ -499,7 +499,7 @@ for i in range(9):
     if random.randint(0, 3):
         a = bubble(i, 3)
         a.pic.center = index2pos(i, 3)
-
+'''
 startTime = time.time()
 newBubColor = random.choice(bubbleColor)
 newBub = Actor(newBubColor)
