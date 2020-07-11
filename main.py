@@ -486,7 +486,7 @@ def on_music_end():
 
 
 music.play_once('background1')
-'''
+
 for j in range(3):
     for i in range(9):
         a = bubble(i, j)
@@ -499,7 +499,7 @@ for i in range(9):
     if random.randint(0, 3):
         a = bubble(i, 3)
         a.pic.center = index2pos(i, 3)
-'''
+
 startTime = time.time()
 newBubColor = random.choice(bubbleColor)
 newBub = Actor(newBubColor)
