@@ -2,7 +2,6 @@ import pgzrun
 import pgzero as pg
 import math
 import random
-import time
 import numpy as np
 
 WIDTH = 600
@@ -500,7 +499,6 @@ for i in range(9):
         a = bubble(i, 3)
         a.pic.center = index2pos(i, 3)
 
-startTime = time.time()
 newBubColor = random.choice(bubbleColor)
 newBub = Actor(newBubColor)
 nextBubColor = random.choice(bubbleColor)
