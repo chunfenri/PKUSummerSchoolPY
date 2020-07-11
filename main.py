@@ -13,8 +13,10 @@ bubbleColor = ['red', 'yellow', 'green', 'dblue']
 bubblePos = [["" for _ in range(20)] for _ in range(10)]
 
 activeBubble = {}
+activeBubbleCnt = {}
 
 explodeList = []
+explodeListCnt = []
 
 movingLine = False
 bubbleFlying = False
@@ -32,9 +34,11 @@ newmark = 0
 musicCount = 0
 bubbleExping = False
 
+bubbleCnt = 0
 
 class bubble():
     def __init__(self, x, y, color=''):
+        global bubbleCnt
         if color:
             self.color = color
         else:
@@ -44,7 +48,9 @@ class bubble():
         self.pic = Actor(self.color)
         posx, posy = index2pos(x, y)
         self.pic.center = (posx, posy)
-
+        self.cnt = bubbleCnt
+        activeBubbleCnt[bubbleCnt] = self
+        bubbleCnt += 1
         activeBubble[(x, y)] = self
         bubblePos[x][y] = self.color
 
@@ -177,52 +183,55 @@ def findFallBubble():
 
 
 def explodeBubbles():
-    global newmark, explodeList
-    newmark = len(explodeList) ** 2
+    global newmark, explodeListCnt, explodeList
+    newmark = len(explodeList)**2
     sounds.eliminate2.play()
-    for pos in explodeList:
-        name = activeBubble[pos].color
+    for ct in explodeListCnt:
+        name = activeBubbleCnt[ct].color
         name += 'exp1'
-        activeBubble[pos].pic.image = name
+        activeBubbleCnt[ct].pic.image = name
     bubbleExpStep = 1
     clock.schedule(explodeBub1, 0.1)
 
 
 def explodeBub1():
-    global explodeList
-    for pos in explodeList:
-        name = activeBubble[pos].color
+    global explodeListCnt
+    for ct in explodeListCnt:
+        name = activeBubbleCnt[ct].color
         name += 'exp2'
-        activeBubble[pos].pic.image = name
+        activeBubbleCnt[ct].pic.image = name
     clock.schedule(explodeBub2, 0.1)
 
 
 def explodeBub2():
-    global explodeList
-    for pos in explodeList:
-        name = activeBubble[pos].color
+    global explodeListCnt
+    for ct in explodeListCnt:
+        name = activeBubbleCnt[ct].color
         name += 'exp3'
-        activeBubble[pos].pic.image = name
+        activeBubbleCnt[ct].pic.image = name
     clock.schedule(explodeBub3, 0.1)
 
 
 def explodeBub3():
-    global explodeList, mark, newmark
+    global explodeList, explodeListCnt, mark, newmark
     sounds.eliminate3.play()
     mark += newmark
-    for pos in explodeList:
-        del activeBubble[pos]
+    for ct in explodeListCnt:
+        de = activeBubbleCnt[ct]
+        del activeBubble[(de.indx, de.indy)]
+        del de
+
     explodeList.clear()
+    explodeListCnt.clear()
     explodeList = findFallBubble()
+    for item in explodeList:
+        explodeListCnt.append(activeBubble[item].cnt)
     if explodeList:
         sounds.eliminate4.play()
         explodeBubbles()
     else:
-        global  bubbleExping
+        global bubbleExping
         bubbleExping = False
-
-    
-    
 
 
 def game_end():
@@ -273,14 +282,32 @@ def generateLine():
 
 def draw():
     screen.clear()
-    screen.fill((0, 100, 0))
+    #screen.fill((0, 100, 0))
+    screen.blit('3', (0, 0))
+    screen.draw.text('mark:', (400, 940), color='#FFAAAA', fontsize=40)
+    screen.draw.text(str(mark), (490, 935), color='#FFAAFF',
+                     gcolor='#FFFFAA', fontsize=60)
 
+    screen.draw.filled_circle((150, 950), 20, switchColor(nextBubColor))
     newBub.draw()
     for bubble in activeBubble.values():
         bubble.pic.draw()
 
 
-
+def switchColor(name):
+    if name == 'red':
+        return (255, 40, 40)
+    if name == 'yellow':
+        return (255, 255, 0)
+    if name == 'dblue':
+        return(0, 0, 255)
+    if name == 'green':
+        return (60, 255, 60)
+    if name == 'orange':
+        return (255, 150, 0)
+    if name == 'lblue':
+        return (150, 150, 255)
+    return (255, 50, 255)
 
 
 def update():
@@ -291,7 +318,7 @@ def update():
     updating = 1
 
     if bubbleFlying:
-        global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY, newBub, newBubColor, bubbleLock
+        global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY, newBub, newBubColor, nextBubColor, bubbleLock
         bubbleNowX -= bubbleFlyX
         bubbleNowY -= bubbleFlyY
         if bubbleNowX < 30 or bubbleNowX > 570:
@@ -308,7 +335,7 @@ def update():
                             neiborList.append((idxX + i, idxY + j))
 
             if neiborList:
-  
+
                 minOne = neiborList[0]
                 x0, y0 = index2pos(minOne[0], minOne[1])
                 minDis = (bubbleNowX - x0)**2 + (bubbleNowY - y0)**2
@@ -321,7 +348,8 @@ def update():
                 if not bubbleLock and math.sqrt(minDis) <= 2 * rad:
                     bubbleLock = 1
                     a = bubble(idxX, idxY, newBubColor)
-                    newBubColor = random.choice(bubbleColor)
+                    newBubColor = nextBubColor
+                    nextBubColor = random.choice(bubbleColor)
                     del newBub
                     newBub = Actor(newBubColor)
                     newBub.center = (300, 950)
@@ -329,10 +357,14 @@ def update():
                     bubbleNowY = 950
                     bubbleFlying = False
 
-                    global explodeList
+                    global explodeList, explodeListCnt, epoch
                     explodeList = findExplode(a)
+                    for item in explodeList:
+                        explodeListCnt.append(activeBubble[item].cnt)
+
                     if len(explodeList) >= 3:
                         bubbleExping = True
+                        orgEpoch = epoch
                         explodeBubbles()
                         updating = 0
                         bubbleLock = 0
@@ -344,7 +376,6 @@ def update():
                         generateLine()
                     bubbleLock = 0
     updating = 0
-
 
 
 def on_mouse_down(pos):
@@ -392,6 +423,7 @@ for i in range(9):
 startTime = time.time()
 newBubColor = random.choice(bubbleColor)
 newBub = Actor(newBubColor)
+nextBubColor = random.choice(bubbleColor)
 newBub.pos = (300, 950)
 bubbleNowX = 300
 bubbleNowY = 950
