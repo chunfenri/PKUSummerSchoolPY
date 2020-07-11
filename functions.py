@@ -9,51 +9,37 @@ import numpy as np
 
 
 def index2pos(indx, indy):
-    rad = 30
+    rad = 30.0
     dy = rad * math.sqrt(3)
-    y_pixel = rad + dy * indy
+    posy = rad + dy * indy
     if indy % 2 == 0:
-        x_pixel = rad + 2 * rad * indx
+        posx = rad + 2 * rad * indx
     else:
-        x_pixel = 2 * rad + 2 * rad * indx
-    posy = y_pixel / 1200
-    posx = x_pixel / 600
+        posx = 2 * rad + 2 * rad * indx
     return (posx, posy)
 
 
-def index2pos_pixel(indx, indy):
-    rad = 30
-    dy = rad * math.sqrt(3)
-    y_pixel = rad + dy * indy
-    if indy % 2 == 0:
-        x_pixel = rad + 2 * rad * indx
-    else:
-        x_pixel = 2 * rad + 2 * rad * indx
-    return (x_pixel, y_pixel)
 
-
-def pos2index(posy, posx):
+def pos2index(posx, posy):
     '''主要用于bubble碰撞到别的bubble时看应该要塞到哪个位置，位置可能不是准确位置，在一个范围内都要映射到一个位置'''
-    rad = 30
+    rad = 30.0
     dy = rad * math.sqrt(3)
-    y_pixel = posy * 1200
-    x_pixel = posx * 600
     indy_esm = [
-        int(y_pixel / dy) - 1,
-        int(y_pixel / dy),
-        int(y_pixel / dy) + 1
+        int(posy / dy) - 1,
+        int(posy / dy),
+        int(posy / dy) + 1
     ]
     indx_esm = [
-        int(x_pixel / (2 * rad)) - 1,
-        int(x_pixel / (2 * rad)),
-        int(x_pixel / (2 * rad)) + 1
+        int(posx / (2 * rad)) - 1,
+        int(posx / (2 * rad)),
+        int(posx / (2 * rad)) + 1
     ]
     for x in indx_esm:
         for y in indy_esm:
             if x in range(10) and y in range(23):
-                x1_pixel, y1_pixel = index2pos_pixel(x, y)
-                dist = math.sqrt((x_pixel - x1_pixel) * (x_pixel - x1_pixel) +
-                                 (y_pixel - y1_pixel) * (y_pixel - y1_pixel))
+                posx1, posy1 = index2pos_pixel(x, y)
+                dist = math.sqrt((posx - posx1) * (posx - posx1) +
+                                 (posy - posy1) * (posy - posy1))
                 if dist <= rad:
                     return (x, y)
 
@@ -128,3 +114,5 @@ def findFallBubble():
             if mark == 0:
                 fallList += res
     return fallList
+
+print(index2pos(0,0),index2pos(1,0),index2pos(2,0))
