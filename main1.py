@@ -53,16 +53,10 @@ def index2pos(indx, indy):
     rad = 30.0
     dy = rad * math.sqrt(3)
     posy = rad + dy * indy
-    if epoch % 2 == 0:
-        if indy % 2 == 0:
-            posx = rad + 2 * rad * indx
-        else:
-            posx = 2 * rad + 2 * rad * indx
+    if indy % 2 == 0:
+        posx = rad + 2 * rad * indx
     else:
-        if indy % 2 == 1:
-            posx = rad + 2 * rad * indx
-        else:
-            posx = 2 * rad + 2 * rad * indx
+        posx = 2 * rad + 2 * rad * indx
     return (posx, posy)
 
 
@@ -78,7 +72,7 @@ def pos2index(posx, posy):
     ]
     for x in indx_esm:
         for y in indy_esm:
-            if x in range(10) and y in range(15):
+            if x in range(10) and y in range(23):
                 posx1, posy1 = index2pos(x, y)
                 dist = math.sqrt((posx - posx1) * (posx - posx1) +
                                  (posy - posy1) * (posy - posy1))
@@ -93,20 +87,12 @@ def judgeConnect(A_indx, A_indy, B_indx, B_indy):
             if abs(A_indx - B_indx) == 1:
                 return 1
         elif abs(A_indy - B_indy) == 1:
-            if epoch % 2 == 0:
-                if A_indy % 2 == 0:
-                    if A_indx == B_indx or A_indx - 1 == B_indx:
-                        return 1
-                else:
-                    if A_indx == B_indx or A_indx + 1 == B_indx:
-                        return 1
+            if A_indy % 2 == 0:
+                if A_indx == B_indx or A_indx - 1 == B_indx:
+                    return 1
             else:
-                if A_indy % 2 == 1:
-                    if A_indx == B_indx or A_indx - 1 == B_indx:
-                        return 1
-                else:
-                    if A_indx == B_indx or A_indx + 1 == B_indx:
-                        return 1
+                if A_indx == B_indx or A_indx + 1 == B_indx:
+                    return 1
     return 0
 
 
@@ -177,7 +163,7 @@ def findFallBubble():
 
 
 def explodeBubbles():
-    global newmark, explodeList
+    global newmark
     newmark = len(explodeList) ** 2
     sounds.eliminate2.play()
     for pos in explodeList:
@@ -210,6 +196,7 @@ def explodeBub3():
     global explodeList, mark, newmark
     sounds.eliminate3.play()
     mark += newmark
+    newmark = 0
     for pos in explodeList:
         del activeBubble[pos]
     explodeList.clear()
@@ -218,16 +205,14 @@ def explodeBub3():
         sounds.eliminate4.play()
         explodeBubbles()
     else:
-        global  bubbleExping
+        global bubbleFlying, bubbleExping
+        bubbleFlying = False
         bubbleExping = False
-
-    
-    
 
 
 def game_end():
     for x in range(10):
-        for y in range(15):
+        for y in range(17):
             if (x, y) in activeBubble:
                 return 1
     return 0
@@ -235,13 +220,7 @@ def game_end():
 
 def generateLine():
 
-    global activeBubble, epoch
-    if epoch % 2:
-        lineNum = 10
-    else:
-        lineNum = 9
-    epoch += 1
-
+    global activeBubble
     dic = {}
     for orgKey in activeBubble.keys():
         newKey = list(orgKey)
@@ -255,6 +234,13 @@ def generateLine():
         val.indy += 1
         posx, posy = index2pos(val.indx, val.indy)
         val.pic.center = (posx, posy)
+
+    global epoch
+    if epoch % 2:
+        lineNum = 9
+    else:
+        lineNum = 10
+    epoch += 1
 
     for i in range(lineNum):
         activeBubble[(i, 0)] = bubble(i, 0)
@@ -280,14 +266,12 @@ def draw():
         bubble.pic.draw()
 
 
-
-
-
 def update():
     rad = 30
-    global bubbleFlying, bubbleExping, updating
+    global bubbleFlying, bubbleExping,  updating
     if bubbleExping or updating:
         return
+
     updating = 1
 
     if bubbleFlying:
@@ -303,12 +287,11 @@ def update():
             neiborList = []
             for i in range(-1, 2):
                 for j in (-1, 0):
-                    if judgeConnect(idxX + i, idxY + j, idxX, idxY):
+                    if judgeConnect(idxX+i, idxY+j, idxX, idxY):
                         if (idxX + i, idxY + j) in activeBubble:
                             neiborList.append((idxX + i, idxY + j))
 
             if neiborList:
-  
                 minOne = neiborList[0]
                 x0, y0 = index2pos(minOne[0], minOne[1])
                 minDis = (bubbleNowX - x0)**2 + (bubbleNowY - y0)**2
@@ -320,6 +303,9 @@ def update():
 
                 if not bubbleLock and math.sqrt(minDis) <= 2 * rad:
                     bubbleLock = 1
+                    print(neiborList)
+                    print(bubbleNowX, bubbleNowY)
+                    print(idxX, idxY)
                     a = bubble(idxX, idxY, newBubColor)
                     newBubColor = random.choice(bubbleColor)
                     del newBub
@@ -327,7 +313,7 @@ def update():
                     newBub.center = (300, 950)
                     bubbleNowX = 300
                     bubbleNowY = 950
-                    bubbleFlying = False
+                    bubbleFlying = 0
 
                     global explodeList
                     explodeList = findExplode(a)
@@ -336,6 +322,7 @@ def update():
                         explodeBubbles()
                         updating = 0
                         bubbleLock = 0
+                        return
                     else:
                         explodeList.clear()
                     global bubHitNum
@@ -346,16 +333,16 @@ def update():
     updating = 0
 
 
-
 def on_mouse_down(pos):
     posx, posy = pos
-    global bubbleFlying
+    global bubbleFlying, bubbleExping
     if posy < 920 and bubbleFlying == False and bubbleExping == False:
+        sounds.eliminate1.play()
         posx -= 300
         posy = 950 - posy
         global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY
-        bubbleFlyX = -math.sin(math.atan(posx / posy)) * 20
-        bubbleFlyY = math.cos(math.atan(posx / posy)) * 20
+        bubbleFlyX = -math.sin(math.atan(posx / posy)) * 10
+        bubbleFlyY = math.cos(math.atan(posx / posy)) * 10
         bubbleNowX = 300.0
         bubbleNowY = 950.0
         bubbleFlying = True
