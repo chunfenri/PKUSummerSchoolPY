@@ -56,6 +56,10 @@ class bubble():
 
 
 def index2pos(indx, indy):
+    '''
+    坐标转换函数,将行列坐标转换为窗口位置坐标
+    不同epoch下第一行可能有9个或10个泡泡,因此转换过程不一定相同
+    '''
     rad = 30.0
     dy = rad * math.sqrt(3)
     posy = rad + dy * indy
@@ -73,7 +77,10 @@ def index2pos(indx, indy):
 
 
 def pos2index(posx, posy):
-    '''主要用于bubble碰撞到别的bubble时看应该要塞到哪个位置，位置可能不是准确位置，在一个范围内都要映射到一个位置'''
+    '''
+    坐标转换函数,将一定范围内的窗口位置坐标转换为行列坐标
+    主要用于bubble碰撞到别的bubble时看应该要塞到哪个位置，位置可能不是准确位置，在一个范围内都要映射到一个位置
+    '''
     rad = 30.0
     dy = rad * math.sqrt(3)
     indy_esm = [int(posy / dy) - 1, int(posy / dy), int(posy / dy) + 1]
@@ -94,6 +101,10 @@ def pos2index(posx, posy):
 
 
 def judgeConnect(A_indx, A_indy, B_indx, B_indy):
+    '''
+    给定两对行列坐标(A_indx, A_indy)和(B_indx, B_indy),判断两个泡泡是否相邻.
+    与之前的坐标转换函数一样,不同epoch下判断程序不同
+    '''
     if A_indx in range(10) and A_indy in range(15):
         if A_indy == B_indy:
             if abs(A_indx - B_indx) == 1:
@@ -117,6 +128,9 @@ def judgeConnect(A_indx, A_indy, B_indx, B_indy):
 
 
 def explodeSearch(bubbleA):
+    '''
+    深度优先搜索,把全体泡泡看出一个节点染色图,寻找颜色相同且连通的节点.
+    '''
     res = [(bubbleA.indx, bubbleA.indy)]
     global vis
     vis[bubbleA.indx][bubbleA.indy] = 1
@@ -135,9 +149,10 @@ def explodeSearch(bubbleA):
 
 
 def findExplode(bubbleA):
-    '''bubbleA是撞击上的球所在位置的index值，是一个二元元组
-    找到哪些球球需要爆炸，返回爆照球的下标列表。不包含爆炸后掉落的球，只考虑相同颜色的连通分量'''
-    '''先传入新的球bubbleA,函数返回所有需要爆炸球的下标二元组列表.若不需爆炸则返回空表'''
+    '''
+    找到哪些球球需要爆炸,返回会爆炸球的下标列表.不包含爆炸后掉落的球.
+    参数为新的球bubbleA,函数返回所有需要爆炸球的坐标二元组列表.若不需爆炸则返回空表.
+    '''
     global vis
     vis = [[0 for _ in range(20)] for _ in range(10)]
     res = explodeSearch(bubbleA)
@@ -148,6 +163,10 @@ def findExplode(bubbleA):
 
 
 def connectSearch(bubbleA):
+    '''
+    深度优先搜索,把全体泡泡看成一个图,枚举其连通分量,并标记这个连通分量是否有在第0行的节点.
+    返回值res是连通分量内节点的坐标列表,mk是一个标记,mk==1当且仅当这个连通分量有在第0行的节点.
+    '''
     res = [(bubbleA.indx, bubbleA.indy)]
     global vis
     vis[bubbleA.indx][bubbleA.indy] = 1
@@ -170,7 +189,9 @@ def connectSearch(bubbleA):
 
 
 def findFallBubble():
-    '''找到球爆炸后需要掉下来的其他球，返回值同上'''
+    '''
+    找到球爆炸后需要掉落的球,返回值同上.
+    '''
     fallList = []
     global vis
     vis = [[0 for _ in range(20)] for _ in range(10)]
@@ -286,7 +307,10 @@ def game_end3():
 
 
 def generateLine():
-
+    '''
+    生成新的行,所有现有的泡泡下移一列,并在第0行生成一行新的泡泡.
+    主要涉及到全局字典activeBubble元素的更新.
+    '''
     global activeBubble, epoch
     for i in range(10):
         if (i, 14) in activeBubble:
