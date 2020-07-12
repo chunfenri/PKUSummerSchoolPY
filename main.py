@@ -11,9 +11,11 @@ bubbleColor = ['red', 'yellow', 'green', 'dblue']
 
 
 activeBubble = {}
+
 activeBubbleCnt = {}
 
 explodeList = []
+
 explodeListCnt = []
 
 bubbleFlyX = 0.0
@@ -380,7 +382,7 @@ def generateLine():
 
 def draw():
     screen.clear()
-    screen.blit('2', (0, 0))  # 一共有三张背景图，分别为'1','2','3'，可以更换背景
+    screen.blit('3', (0, 0))  # 一共有三张背景图，分别为'1','2','3'，可以更换背景
     screen.draw.text('score:', (380, 940), color='#FFAAAA', fontsize=40)
     screen.draw.text(str(mark), (480, 935),
                      color='#FFAAFF', gcolor='#FFFFAA', fontsize=60)  # 显示得分
