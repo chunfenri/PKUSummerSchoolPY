@@ -390,7 +390,7 @@ def update():
                         if (idxX + i, idxY + j) in activeBubble:
                             neiborList.append((idxX + i, idxY + j))
 
-            if idxY == 0 and len(neiborList) < 2:
+            if idxY == 0 and len(neiborList) == 0:
                 a = bubble(idxX, idxY, newBubColor)
                 newBubColor = nextBubColor
                 nextBubColor = random.choice(bubbleColor)
@@ -421,7 +421,7 @@ def update():
                     if Dis < minDis:
                         minDis = Dis
 
-                if not bubbleLock and math.sqrt(minDis) <= 2 * rad:
+                if (not bubbleLock and math.sqrt(minDis) <= 2 * rad) or idxY==0:
                     bubbleLock = 1
                     a = bubble(idxX, idxY, newBubColor)
                     newBubColor = nextBubColor
