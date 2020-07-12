@@ -16,20 +16,23 @@ activeBubbleCnt = {}
 explodeList = []
 explodeListCnt = []
 
-movingLine = False
-bubbleFlying = False
 bubbleFlyX = 0.0
 bubbleFlyY = 0.0
 bubbleNowX = 0.0
 bubbleNowY = 0.0
-updating = 0
-bubbleLock = 0
+
+
 
 epoch = 0
 bubHitNum = 0
 mark = 0
 newmark = 0
 musicCount = 0
+
+updating = False
+bubbleLock = False
+movingLine = False
+bubbleFlying = False
 bubbleExping = False
 gameEnd = False
 gameEndFinish = False
@@ -204,6 +207,9 @@ def findFallBubble():
 
 
 def explodeBubbles():
+    '''
+    球爆炸开始时的逻辑与动画效果（第一帧）
+    '''
     global newmark, explodeListCnt, explodeList
     newmark = len(explodeList) ** 2
     if newmark >= 64:
@@ -218,6 +224,9 @@ def explodeBubbles():
 
 
 def explodeBub1():
+    '''
+    球爆炸的动画效果（第二帧）
+    '''
     global explodeListCnt
     for ct in explodeListCnt:
         name = activeBubbleCnt[ct].color
@@ -227,6 +236,9 @@ def explodeBub1():
 
 
 def explodeBub2():
+    '''
+    球爆炸的动画效果（第三帧）
+    '''
     global explodeListCnt
     for ct in explodeListCnt:
         name = activeBubbleCnt[ct].color
@@ -236,6 +248,9 @@ def explodeBub2():
 
 
 def explodeBub3():
+    '''
+    球爆炸的结束逻辑与音效
+    '''
     global explodeList, explodeListCnt, mark, newmark
     sounds.eliminate3.play()
     mark += newmark
@@ -258,6 +273,9 @@ def explodeBub3():
 
 
 def game_end():
+    '''
+    游戏结束开始时的逻辑用户音效，以及动画效果（第一帧）
+    '''
     global bubbleFlying, gameEnd
     bubbleFlying = False
     gameEnd = True
@@ -275,6 +293,9 @@ def game_end():
 
 
 def game_end1():
+    '''
+    游戏结束动画效果（第二帧）
+    '''
     for item in activeBubble.values():
         name = item.color
         name += 'exp2'
@@ -287,6 +308,9 @@ def game_end1():
 
 
 def game_end2():
+    '''
+    游戏结束动画效果（第三帧）
+    '''
     for item in activeBubble.values():
         name = item.color
         name += 'exp3'
@@ -299,6 +323,9 @@ def game_end2():
 
 
 def game_end3():
+    '''
+    游戏结束完成时的逻辑与音效
+    '''
     global gameEndFinish
     gameEndFinish = True
     global activeBubble
@@ -312,18 +339,18 @@ def generateLine():
     主要涉及到全局字典activeBubble元素的更新.
     '''
     global activeBubble, epoch
-    for i in range(10):
+    for i in range(10):  # 若在没生成球时，最下面一行已经有球，则直接返回true,被update函数捕获执行游戏结束。
         if (i, 14) in activeBubble:
             return True
 
-    if epoch % 2:
+    if epoch % 2:  # 由于球是密堆积，相邻行球数不一样，所以按照行数来确定生成10个或9个新球
         lineNum = 10
     else:
         lineNum = 9
     epoch += 1
 
     dic = {}
-    for orgKey in activeBubble.keys():
+    for orgKey in activeBubble.keys():  # 每个已有球下移一格
         newKey = list(orgKey)
         newKey[1] += 1
         newKey = tuple(newKey)
@@ -336,10 +363,10 @@ def generateLine():
         posx, posy = index2pos(val.indx, val.indy)
         val.pic.center = (posx, posy)
 
-    for i in range(lineNum):
+    for i in range(lineNum):  # 生成新球
         activeBubble[(i, 0)] = bubble(i, 0)
 
-    if epoch == 10:
+    if epoch == 10:  # 根据游戏进行情况加入新球色
         bubbleColor.append('orange')
 
     if epoch == 25:
@@ -353,15 +380,15 @@ def generateLine():
 
 def draw():
     screen.clear()
-    #screen.fill((0, 100, 0))
-    screen.blit('2', (0, 0))
+    screen.blit('2', (0, 0))  # 一共有三张背景图，分别为'1','2','3'，可以更换背景
     screen.draw.text('score:', (380, 940), color='#FFAAAA', fontsize=40)
     screen.draw.text(str(mark), (480, 935),
-                     color='#FFAAFF', gcolor='#FFFFAA', fontsize=60)
+                     color='#FFAAFF', gcolor='#FFFFAA', fontsize=60)  # 显示得分
 
-    screen.draw.filled_circle((150, 950), 20, switchColor(nextBubColor))
-    
-    if gameEndFinish == 0:
+    screen.draw.filled_circle(
+        (150, 950), 20, switchColor(nextBubColor))  # 画提示球
+
+    if gameEndFinish == False:
         newBub.draw()
         for bubble in activeBubble.values():
             bubble.pic.draw()
@@ -370,6 +397,9 @@ def draw():
 
 
 def switchColor(name):
+    '''
+    颜色名称到RGB值的映射
+    '''
     if name == 'red':
         return (255, 40, 40)
     if name == 'yellow':
@@ -388,16 +418,16 @@ def switchColor(name):
 def update():
     rad = 30
     global bubbleFlying, bubbleExping, updating, gameEnd
-    if bubbleExping or updating or gameEnd:
-        return
-    updating = 1
+    if bubbleExping or updating or gameEnd:  # 在异步调用的函数没有返回前，或上一个update函数没有返回前不进行下一步update逻辑
+        return  # 避免因为多线程竞争（不同的线程修改对象的参数）导致的程序逻辑问题
+    updating = True
 
     if bubbleFlying:
         global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY, newBub, newBubColor, nextBubColor, bubbleLock, bubHitNum
-        bubbleNowX -= bubbleFlyX
+        bubbleNowX -= bubbleFlyX  # 利用两个全局浮点数来存储泡泡的准确位置，防止舍入误差的累积
         bubbleNowY -= bubbleFlyY
 
-        if bubbleNowX < 30:
+        if bubbleNowX < 30:  # 实现触边反弹效果，在触边时改变x轴飞行速度分量的方向
             bubbleFlyX = -bubbleFlyX
             bubbleNowX = 60 - bubbleNowX
         if bubbleNowX > 570:
@@ -405,7 +435,7 @@ def update():
             bubbleNowX = 1140 - bubbleNowX
 
         newBub.center = (bubbleNowX, bubbleNowY)
-        if bubbleNowY < 950:
+        if bubbleNowY < 950:  # 进入网格部分后每次更新位置都查看此位置周围是否有其他泡泡
             idxX, idxY = pos2index(bubbleNowX, bubbleNowY)
             neiborList = []
             for i in range(-1, 2):
@@ -414,7 +444,7 @@ def update():
                         if (idxX + i, idxY + j) in activeBubble:
                             neiborList.append((idxX + i, idxY + j))
 
-            if idxY == 0 and len(neiborList) == 0:
+            if idxY == 0 and len(neiborList) == 0:  # 防止球从全图的最上方的空白部分飞出去
                 a = bubble(idxX, idxY, newBubColor)
                 newBubColor = nextBubColor
                 nextBubColor = random.choice(bubbleColor)
@@ -428,15 +458,15 @@ def update():
                 bubHitNum += 1
                 if bubHitNum % 4 == 0:
                     generateLine()
-                bubbleLock = 0
-                updating = 0
+                bubbleLock = False
+                updating = False
                 return
 
             if neiborList:
-                if bubbleNowY > 910:
+                if bubbleNowY > 910:  # 若邻接有球且球的位置很靠下则游戏结束
                     game_end()
                     return
-                minOne = neiborList[0]
+                minOne = neiborList[0]  # 寻找相邻球中最进的球
                 x0, y0 = index2pos(minOne[0], minOne[1])
                 minDis = (bubbleNowX - x0)**2 + (bubbleNowY - y0)**2
                 for neighbor in neiborList[1:]:
@@ -445,10 +475,11 @@ def update():
                     if Dis < minDis:
                         minDis = Dis
 
-                if (not bubbleLock and math.sqrt(minDis) <= 2 * rad) or idxY==0:
-                    bubbleLock = 1
+                if (not bubbleLock and math.sqrt(minDis) <= 2 * rad) or idxY == 0:  # 判断本球与距离最近球是否碰撞
+                    bubbleLock = True
+                    # 在碰撞位置生成一个一模一样的bubble对象
                     a = bubble(idxX, idxY, newBubColor)
-                    newBubColor = nextBubColor
+                    newBubColor = nextBubColor  # 更新newBub对象与提示颜色
                     nextBubColor = random.choice(bubbleColor)
                     del newBub
                     newBub = Actor(newBubColor)
@@ -462,22 +493,22 @@ def update():
                     for item in explodeList:
                         explodeListCnt.append(activeBubble[item].cnt)
 
-                    if len(explodeList) >= 3:
+                    if len(explodeList) >= 3:  # 若碰撞点颜色一样的球超过三个就爆炸
                         bubbleExping = True
                         orgEpoch = epoch
                         explodeBubbles()
-                        updating = 0
-                        bubbleLock = 0
+                        updating = False
+                        bubbleLock = False
                     else:
-                        explodeList.clear()
+                        explodeList.clear()  # 若无则清空列表
 
                     bubHitNum += 1
-                    if bubHitNum % 5 == 0:
-                        if generateLine():
-                            game_end()
+                    if bubHitNum % 5 == 0:  #每打5个球生成一行新球
+                        if generateLine():  #若生成球之前最下面的行已经有球就结束游戏
+                           game_end()
 
-                    bubbleLock = 0
-    updating = 0
+                    bubbleLock = False
+    updating = False
 
 
 def on_mouse_down(pos):
@@ -488,7 +519,7 @@ def on_mouse_down(pos):
         posx -= 300
         posy = 950 - posy
         global bubbleFlyX, bubbleFlyY, bubbleNowX, bubbleNowY
-        bubbleFlyX = -math.sin(math.atan(posx / posy)) * 20
+        bubbleFlyX = -math.sin(math.atan(posx / posy)) * 20  # 允许情况下的鼠标点击会设置飞行速度，并设置标志变量
         bubbleFlyY = math.cos(math.atan(posx / posy)) * 20
         bubbleNowX = 300.0
         bubbleNowY = 950.0
@@ -496,7 +527,7 @@ def on_mouse_down(pos):
 
 
 def on_music_end():
-    global musicCount
+    global musicCount  # 三首歌轮播
     musicCount += 1
     if musicCount % 3 == 1:
         music.play_once('background2')
@@ -510,7 +541,7 @@ def on_music_end():
 
 music.play_once('background1')
 
-for j in range(3):
+for j in range(3):  # 生成三行满球和一行随机球作为初始
     for i in range(9):
         a = bubble(i, j)
         a.pic.center = index2pos(i, j)
@@ -522,7 +553,7 @@ for i in range(9):
     if random.randint(0, 3):
         a = bubble(i, 3)
         a.pic.center = index2pos(i, 3)
-
+        
 newBubColor = random.choice(bubbleColor)
 newBub = Actor(newBubColor)
 nextBubColor = random.choice(bubbleColor)
